@@ -10,6 +10,7 @@ from src.schemas.user.user_update_schema import UserUpdateSchema
 from src.utils.password import PasswordManager
 from fastapi import Depends
 from src.config.settings import get_db
+from src.utils.cpf_validator import CPFValidator
 
 
 class UserService:
@@ -18,6 +19,7 @@ class UserService:
     ) -> None:
         self.db = db
         self.pwd = password_manager or PasswordManager()
+        self.cpf_validator = CPFValidator()
 
     def _get_by_filter(self, **kwargs) -> Optional[User]:
         return self.db.query(User).filter_by(**kwargs).first()
@@ -38,11 +40,15 @@ class UserService:
         return self.db.query(User).offset(skip).limit(limit).all()
 
     def create(self, *, user_in: UserCreateSchema) -> User:
+        cpf_clean = self.cpf_validator.clean(user_in.cpf)
+        if not self.cpf_validator.is_valid(cpf_clean):
+            raise ValueError("invalid cpf")
+
         if self.get_by_username(user_in.username):
             raise ValueError("username already exists")
         if self.get_by_email(user_in.email):
             raise ValueError("email already exists")
-        if self.get_by_cpf(user_in.cpf):
+        if self.get_by_cpf(cpf_clean):
             raise ValueError("cpf already exists")
 
         password_hash = self.pwd.hash(user_in.password)
@@ -51,7 +57,7 @@ class UserService:
             username=user_in.username,
             email=user_in.email,
             password_hash=password_hash,
-            cpf=user_in.cpf,
+            cpf=cpf_clean,
             birthday=user_in.birthday,
         )
         self.db.add(user)
@@ -61,23 +67,16 @@ class UserService:
 
     def update(self, user: User, *, user_in: UserUpdateSchema) -> User:
         changed = False
+        if getattr(user_in, "cpf", None) is not None:
+            raise ValueError("cpf cannot be updated")
         if user_in.name is not None:
             user.name = user_in.name
             changed = True
         if user_in.username is not None:
+            existing = self.get_by_username(user_in.username)
+            if existing and getattr(existing, "id", None) != getattr(user, "id", None):
+                raise ValueError("username already exists")
             user.username = user_in.username
-            changed = True
-        if user_in.email is not None:
-            user.email = user_in.email
-            changed = True
-        if user_in.cpf is not None:
-            user.cpf = user_in.cpf
-            changed = True
-        if user_in.birthday is not None:
-            user.birthday = user_in.birthday
-            changed = True
-        if user_in.password is not None:
-            user.password_hash = self.pwd.hash(user_in.password)
             changed = True
 
         if changed:
