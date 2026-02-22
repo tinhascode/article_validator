@@ -9,11 +9,12 @@ from src.schemas.role.role_read_schema import RoleReadSchema
 from src.schemas.role.role_response_schema import RoleResponseSchema
 from src.schemas.role.role_update_schema import RoleUpdateSchema
 from src.services.role_service import RoleService, get_role_service
+from src.services.auth_service import get_current_user
 
 
 class RoleRoutes:
     def __init__(self) -> None:
-        self.router = APIRouter(prefix="/roles", tags=["roles"])
+        self.router = APIRouter(prefix="/roles", tags=["roles"], dependencies=[Depends(get_current_user)])
 
         self.router.post(
             "/", response_model=RoleResponseSchema, status_code=status.HTTP_201_CREATED

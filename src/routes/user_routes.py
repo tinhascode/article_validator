@@ -9,12 +9,13 @@ from src.schemas.user.user_read_schema import UserReadSchema
 from src.schemas.user.user_response_schema import UserResponseSchema
 from src.schemas.user.user_update_schema import UserUpdateSchema
 from src.services.user_service import UserService, get_user_service
+from src.services.auth_service import get_current_user
 
 
 
 class UserRoutes:
     def __init__(self) -> None:
-        self.router = APIRouter(prefix="/users", tags=["users"])
+        self.router = APIRouter(prefix="/users", tags=["users"], dependencies=[Depends(get_current_user)])
 
         self.router.post(
             "/", response_model=UserResponseSchema, status_code=status.HTTP_201_CREATED
