@@ -28,7 +28,6 @@ def create_app() -> FastAPI:
         except Exception as exc:
             raise HTTPException(status_code=500, detail=str(exc))
 
-    # Create DB tables at startup (development convenience)
     @app.on_event("startup")
     def _init_db_on_startup() -> None:
         init_db()
