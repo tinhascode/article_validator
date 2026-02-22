@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-from typing import Iterable
 
 from fastapi import FastAPI
 
-from .user_routes import  user_router
+from .user_routes import user_router
 
 
 routers = [
     user_router,
-    
-    ]
+]
 
 
 def register_routes(app: FastAPI) -> None:
