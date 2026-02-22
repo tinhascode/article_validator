@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 
 from sqlalchemy import Column, Date, String
 
-from .base.base_model import BaseModel
+from src.models.base.base_model import BaseModel
 
 
 class User(BaseModel):
@@ -44,7 +44,6 @@ class User(BaseModel):
             "name": self.name,
             "username": self.username,
             "email": self.email,
-            "password_hash": self.password_hash,
             "cpf": self.cpf,
             "birthday": self.birthday.isoformat() if self.birthday else None,
             "created_at": (
