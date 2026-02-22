@@ -5,6 +5,7 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 
 from src.models.user import User
+from src.models.role import Role
 from src.schemas.user.user_create_schema import UserCreateSchema
 from src.schemas.user.user_update_schema import UserUpdateSchema
 from src.utils.password import PasswordManager
@@ -59,6 +60,11 @@ class UserService:
             raise ValueError("cpf already exists")
 
         password_hash = self.pwd.hash(user_in.password)
+        if getattr(user_in, "role_id", None) is not None:
+            if user_in.role_id and not self.db.get(Role, user_in.role_id):
+                self.logger.warning("attempt to create user with non-existing role_id=%s", user_in.role_id)
+                raise ValueError("role not found")
+
         user = User(
             name=user_in.name,
             username=user_in.username,
@@ -66,6 +72,7 @@ class UserService:
             password_hash=password_hash,
             cpf=cpf_clean,
             birthday=user_in.birthday,
+            role_id=getattr(user_in, "role_id", None),
         )
         self.db.add(user)
         self.db.commit()
@@ -86,6 +93,12 @@ class UserService:
                 self.logger.warning("attempt to update user with existing username=%s", user_in.username)
                 raise ValueError("username already exists")
             user.username = user_in.username
+            changed = True
+        if getattr(user_in, "role_id", None) is not None:
+            if user_in.role_id and not self.db.get(Role, user_in.role_id):
+                self.logger.warning("attempt to update user with non-existing role_id=%s", user_in.role_id)
+                raise ValueError("role not found")
+            user.role_id = user_in.role_id
             changed = True
 
         if changed:

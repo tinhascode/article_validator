@@ -3,7 +3,8 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, Dict, Optional
 
-from sqlalchemy import Column, Date, String
+from sqlalchemy import Column, Date, String, ForeignKey
+from sqlalchemy.orm import relationship
 
 from src.models.base.base_model import BaseModel
 
@@ -17,6 +18,8 @@ class User(BaseModel):
     password_hash = Column(String(255), nullable=False)
     cpf = Column(String(32), unique=True, nullable=False)
     birthday = Column(Date, nullable=False)
+    role_id = Column(String(36), ForeignKey("roles.id"), nullable=True)
+    role = relationship("Role", backref="users")
 
     def __init__(
         self,
@@ -26,6 +29,7 @@ class User(BaseModel):
         password_hash: str,
         cpf: str,
         birthday: date,
+        role_id: Optional[str] = None,
         id: Optional[str] = None,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
@@ -37,6 +41,7 @@ class User(BaseModel):
         self.password_hash = password_hash
         self.cpf = cpf
         self.birthday = birthday
+        self.role_id = role_id
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -44,6 +49,7 @@ class User(BaseModel):
             "name": self.name,
             "username": self.username,
             "email": self.email,
+            "role_id": self.role_id,
             "cpf": self.cpf,
             "birthday": self.birthday.isoformat() if self.birthday else None,
             "created_at": (

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
+from typing import Optional
 from pydantic import EmailStr, Field
 from src.schemas.base import BaseSchema
 
@@ -12,3 +13,4 @@ class UserCreateSchema(BaseSchema):
     password: str = Field(..., min_length=8)
     cpf: str = Field(..., max_length=32)
     birthday: date
+    role_id: Optional[str] = None
