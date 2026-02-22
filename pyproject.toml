@@ -1,0 +1,16 @@
+[project]
+name = "article-validator"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.129.2",
+    "python-dotenv>=1.2.1",
+    "pydantic[email]>=2.0",
+    "sqlalchemy>=2.0.46",
+    "uvicorn[standard]>=0.22.0",
+    "pydantic-settings>=2.13.1",
+    "pymysql>=1.1.2",
+    "alembic>=1.18.4",
+]
