@@ -59,16 +59,6 @@ class UserService:
         self.db.refresh(user)
         return user
 
-    def authenticate(self, username_or_email: str, password: str) -> Optional[User]:
-        user = self.get_by_email(username_or_email) or self.get_by_username(
-            username_or_email
-        )
-        if not user:
-            return None
-        if not self.pwd.verify(password, user.password_hash):
-            return None
-        return user
-
     def update(self, user: User, *, user_in: UserUpdateSchema) -> User:
         changed = False
         if user_in.name is not None:
