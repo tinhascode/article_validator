@@ -11,6 +11,7 @@ from src.utils.password import PasswordManager
 from fastapi import Depends
 from src.config.settings import get_db
 from src.utils.cpf_validator import CPFValidator
+from src.config.logger import get_logger
 
 
 class UserService:
@@ -20,6 +21,7 @@ class UserService:
         self.db = db
         self.pwd = password_manager or PasswordManager()
         self.cpf_validator = CPFValidator()
+        self.logger = get_logger(self.__class__.__name__)
 
     def _get_by_filter(self, **kwargs) -> Optional[User]:
         return self.db.query(User).filter_by(**kwargs).first()
@@ -37,18 +39,23 @@ class UserService:
         return self._get_by_filter(cpf=cpf)
 
     def list(self, skip: int = 0, limit: int = 100) -> List[User]:
+        self.logger.info("listing users skip=%d limit=%d", skip, limit)
         return self.db.query(User).offset(skip).limit(limit).all()
 
     def create(self, *, user_in: UserCreateSchema) -> User:
         cpf_clean = self.cpf_validator.clean(user_in.cpf)
         if not self.cpf_validator.is_valid(cpf_clean):
+            self.logger.warning("invalid cpf for username=%s", user_in.username)
             raise ValueError("invalid cpf")
 
         if self.get_by_username(user_in.username):
+            self.logger.warning("attempt to create user with existing username=%s", user_in.username)
             raise ValueError("username already exists")
         if self.get_by_email(user_in.email):
+            self.logger.warning("attempt to create user with existing email=%s", user_in.email)
             raise ValueError("email already exists")
         if self.get_by_cpf(cpf_clean):
+            self.logger.warning("attempt to create user with existing cpf=%s", cpf_clean)
             raise ValueError("cpf already exists")
 
         password_hash = self.pwd.hash(user_in.password)
@@ -63,6 +70,7 @@ class UserService:
         self.db.add(user)
         self.db.commit()
         self.db.refresh(user)
+        self.logger.info("created user id=%s username=%s", getattr(user, "id", None), user.username)
         return user
 
     def update(self, user: User, *, user_in: UserUpdateSchema) -> User:
@@ -75,6 +83,7 @@ class UserService:
         if user_in.username is not None:
             existing = self.get_by_username(user_in.username)
             if existing and getattr(existing, "id", None) != getattr(user, "id", None):
+                self.logger.warning("attempt to update user with existing username=%s", user_in.username)
                 raise ValueError("username already exists")
             user.username = user_in.username
             changed = True
@@ -85,11 +94,13 @@ class UserService:
             self.db.commit()
             self.db.refresh(user)
 
+        self.logger.info("updated user id=%s", getattr(user, "id", None))
         return user
 
     def delete(self, user: User) -> None:
         self.db.delete(user)
         self.db.commit()
+        self.logger.info("deleted user id=%s", getattr(user, "id", None))
 
 
 def get_user_service(db: Session = Depends(get_db)) -> UserService:
