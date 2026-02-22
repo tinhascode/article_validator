@@ -13,7 +13,7 @@ from src.config.settings import Base
 
 
 class ModelMeta(DeclarativeMeta, ABCMeta):
-    pass
+    """Combined metaclass to allow ABC usage on declarative models."""
 
 
 class BaseModel(Base, metaclass=ModelMeta):
