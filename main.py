@@ -13,21 +13,6 @@ def create_app() -> FastAPI:
         description="API for validating and managing articles",
     )
 
-    @app.get("/")
-    def read_root(settings: Settings = Depends(get_settings)):
-        return {
-            "message": "article-validator running",
-            "environment_loaded": True,
-        }
-
-    @app.get("/health-db")
-    def health_db(db: Session = Depends(get_db)):
-        try:
-            db.execute(text("SELECT 1"))
-            return {"status": "database ok"}
-        except Exception as exc:
-            raise HTTPException(status_code=500, detail=str(exc))
-
     @app.on_event("startup")
     def _init_db_on_startup() -> None:
         init_db()
