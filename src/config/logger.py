@@ -10,7 +10,7 @@ class LoggerConfig:
         if handler is None:
             handler = logging.StreamHandler()
         formatter = logging.Formatter(
-            "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+            "%(asctime)s | %(levelname)s | %(name)s | %(filename)s:%(lineno)d | %(message)s",
             datefmt="%d-%m-%Y %H:%M:%S",
         )
         handler.setFormatter(formatter)
