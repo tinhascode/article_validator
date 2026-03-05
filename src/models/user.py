@@ -42,32 +42,3 @@ class User(BaseModel):
         self.cpf = cpf
         self.birthday = birthday
         self.role_id = role_id
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "id": str(self.id),
-            "name": self.name,
-            "username": self.username,
-            "email": self.email,
-            "role_id": self.role_id,
-            "cpf": self.cpf,
-            "birthday": self.birthday.isoformat() if self.birthday else None,
-            "created_at": (
-                self.created_at.isoformat()
-                if isinstance(self.created_at, datetime)
-                else None
-            ),
-            "updated_at": (
-                self.updated_at.isoformat()
-                if isinstance(self.updated_at, datetime)
-                else None
-            ),
-        }
-
-    def __repr__(self) -> str:
-        created = (
-            self.created_at.isoformat()
-            if isinstance(self.created_at, datetime)
-            else "<none>"
-        )
-        return f"<User id={self.id} username={self.username} name={self.name} created_at={created}>"
