@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 from datetime import datetime, timedelta
 
 from jose import JWTError, jwt
+import uuid
 
 from src.config.jwt_config import JwtConfig
 
@@ -21,6 +22,8 @@ class JwtManager:
             "sub": str(subject),
             "iat": int(now.timestamp()),
             "exp": int(expire.timestamp()),
+            "jti": str(uuid.uuid4()),
+            "typ": "access",
         })
 
         encoded = jwt.encode(to_encode, self.config.secret_key, algorithm=self.config.algorithm)
@@ -29,6 +32,9 @@ class JwtManager:
     def decode_token(self, token: str) -> Dict[str, Any]:
         try:
             payload = jwt.decode(token, self.config.secret_key, algorithms=[self.config.algorithm])
+            typ = payload.get("typ")
+            if typ is not None and typ != "access":
+                raise ValueError("token is not an access token")
             return payload
-        except JWTError as exc:  # pragma: no cover - library raised
+        except JWTError as exc:
             raise ValueError("token is invalid") from exc
