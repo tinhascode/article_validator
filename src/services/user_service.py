@@ -13,6 +13,9 @@ from fastapi import Depends
 from src.config.settings import get_db
 from src.utils.cpf_validator import CPFValidator
 from src.config.logger import get_logger
+from typing import Optional as _Optional
+from src.models.user import User as _User
+from src.utils.permissions import admin_permission
 
 
 class UserService:
@@ -43,7 +46,8 @@ class UserService:
         self.logger.info("listing users skip=%d limit=%d", skip, limit)
         return self.db.query(User).offset(skip).limit(limit).all()
 
-    def create(self, *, user_in: UserCreateSchema) -> User:
+    def create(self, *, user_in: UserCreateSchema, current_user: _Optional[_User] = None) -> User:
+        admin_permission.ensure(current_user)
         cpf_clean = self.cpf_validator.clean(user_in.cpf)
         if not self.cpf_validator.is_valid(cpf_clean):
             self.logger.warning("invalid cpf for username=%s", user_in.username)
@@ -80,7 +84,8 @@ class UserService:
         self.logger.info("created user id=%s username=%s", getattr(user, "id", None), user.username)
         return user
 
-    def update(self, user: User, *, user_in: UserUpdateSchema) -> User:
+    def update(self, user: User, *, user_in: UserUpdateSchema, current_user: _Optional[_User] = None) -> User:
+        admin_permission.ensure(current_user)
         changed = False
         if getattr(user_in, "cpf", None) is not None:
             raise ValueError("cpf cannot be updated")
@@ -110,7 +115,8 @@ class UserService:
         self.logger.info("updated user id=%s", getattr(user, "id", None))
         return user
 
-    def delete(self, user: User) -> None:
+    def delete(self, user: User, current_user: _Optional[_User] = None) -> None:
+        admin_permission.ensure(current_user)
         self.db.delete(user)
         self.db.commit()
         self.logger.info("deleted user id=%s", getattr(user, "id", None))

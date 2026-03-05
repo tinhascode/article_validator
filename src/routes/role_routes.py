@@ -10,11 +10,13 @@ from src.schemas.role.role_response_schema import RoleResponseSchema
 from src.schemas.role.role_update_schema import RoleUpdateSchema
 from src.services.role_service import RoleService, get_role_service
 from src.services.auth_service import get_current_user
+from src.utils.permissions import admin_permission
+from src.models.user import User
 
 
 class RoleRoutes:
     def __init__(self) -> None:
-        self.router = APIRouter(prefix="/roles", tags=["roles"], dependencies=[Depends(get_current_user)])
+        self.router = APIRouter(prefix="/roles", tags=["roles"], dependencies=[Depends(admin_permission)])
 
         self.router.post(
             "/", response_model=RoleResponseSchema, status_code=status.HTTP_201_CREATED
@@ -27,10 +29,13 @@ class RoleRoutes:
         )
 
     async def create_role(
-        self, role_in: RoleCreateSchema, svc: RoleService = Depends(get_role_service)
+        self,
+        role_in: RoleCreateSchema,
+        svc: RoleService = Depends(get_role_service),
+        current_user: User = Depends(get_current_user),
     ):
         try:
-            role = svc.create(role_in=role_in)
+            role = svc.create(role_in=role_in, current_user=current_user)
         except ValueError as exc:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
@@ -54,22 +59,23 @@ class RoleRoutes:
         role_id: str,
         payload: RoleUpdateSchema,
         svc: RoleService = Depends(get_role_service),
+        current_user: User = Depends(get_current_user),
     ) -> RoleReadSchema:
         role = svc.get(role_id)
         if not role:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="role not found"
             )
-        updated = svc.update(role, role_in=payload)
+        updated = svc.update(role, role_in=payload, current_user=current_user)
         return RoleReadSchema.from_orm(updated)
 
-    async def delete_role(self, role_id: str, svc: RoleService = Depends(get_role_service)) -> None:
+    async def delete_role(self, role_id: str, svc: RoleService = Depends(get_role_service), current_user: User = Depends(get_current_user)) -> None:
         role = svc.get(role_id)
         if not role:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="role not found"
             )
-        svc.delete(role)
+        svc.delete(role, current_user=current_user)
 
 
 role_router = RoleRoutes().router

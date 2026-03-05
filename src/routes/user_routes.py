@@ -10,12 +10,14 @@ from src.schemas.user.user_response_schema import UserResponseSchema
 from src.schemas.user.user_update_schema import UserUpdateSchema
 from src.services.user_service import UserService, get_user_service
 from src.services.auth_service import get_current_user
+from src.models.user import User
+from src.utils.permissions import admin_permission
 
 
 
 class UserRoutes:
     def __init__(self) -> None:
-        self.router = APIRouter(prefix="/users", tags=["users"], dependencies=[Depends(get_current_user)])
+        self.router = APIRouter(prefix="/users", tags=["users"], dependencies=[Depends(admin_permission)])
 
         self.router.post(
             "/", response_model=UserResponseSchema, status_code=status.HTTP_201_CREATED
@@ -28,10 +30,13 @@ class UserRoutes:
         )
 
     async def create_user(
-        self, user_in: UserCreateSchema, svc: UserService = Depends(get_user_service)
+        self,
+        user_in: UserCreateSchema,
+        svc: UserService = Depends(get_user_service),
+        current_user: User = Depends(get_current_user),
     ):
         try:
-            user = svc.create(user_in=user_in)
+            user = svc.create(user_in=user_in, current_user=current_user)
         except ValueError as exc:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
@@ -59,24 +64,25 @@ class UserRoutes:
         user_id: str,
         payload: UserUpdateSchema,
         svc: UserService = Depends(get_user_service),
+        current_user: User = Depends(get_current_user),
     ) -> UserReadSchema:
         user = svc.get(user_id)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="user not found"
             )
-        updated = svc.update(user, user_in=payload)
+        updated = svc.update(user, user_in=payload, current_user=current_user)
         return UserReadSchema.from_orm(updated)
 
     async def delete_user(
-        self, user_id: str, svc: UserService = Depends(get_user_service)
+        self, user_id: str, svc: UserService = Depends(get_user_service), current_user: User = Depends(get_current_user)
     ) -> None:
         user = svc.get(user_id)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="user not found"
             )
-        svc.delete(user)
+        svc.delete(user, current_user=current_user)
 
 
 user_router = UserRoutes().router

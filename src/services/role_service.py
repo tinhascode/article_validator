@@ -10,6 +10,9 @@ from src.schemas.role.role_update_schema import RoleUpdateSchema
 from fastapi import Depends
 from src.config.settings import get_db
 from src.config.logger import get_logger
+from typing import Optional as _Optional
+from src.models.user import User as _User
+from src.utils.permissions import admin_permission
 
 class RoleService:
     def __init__(self, db: Session) -> None:
@@ -29,7 +32,8 @@ class RoleService:
         self.logger.info("listing roles skip=%d limit=%d", skip, limit)
         return self.db.query(Role).offset(skip).limit(limit).all()
 
-    def create(self, *, role_in: RoleCreateSchema) -> Role:
+    def create(self, *, role_in: RoleCreateSchema, current_user: _Optional[_User] = None) -> Role:
+        admin_permission.ensure(current_user)
         if self.get_by_name(role_in.name):
             self.logger.warning("attempt to create role with existing name=%s", role_in.name)
             raise ValueError("name already exists")
@@ -41,7 +45,8 @@ class RoleService:
         self.logger.info("created role id=%s name=%s", getattr(role, "id", None), role.name)
         return role
 
-    def update(self, role: Role, *, role_in: RoleUpdateSchema) -> Role:
+    def update(self, role: Role, *, role_in: RoleUpdateSchema, current_user: _Optional[_User] = None) -> Role:
+        admin_permission.ensure(current_user)
         changed = False
         if role_in.name is not None:
             role.name = role_in.name
@@ -59,7 +64,8 @@ class RoleService:
         self.logger.info("updated role id=%s", getattr(role, "id", None))
         return role
 
-    def delete(self, role: Role) -> None:
+    def delete(self, role: Role, current_user: _Optional[_User] = None) -> None:
+        admin_permission.ensure(current_user)
         self.db.delete(role)
         self.db.commit()
         self.logger.info("deleted role id=%s", getattr(role, "id", None))
