@@ -14,7 +14,5 @@ routers = [
     auth_router,
 ]
 
-
 def register_routes(app: FastAPI) -> None:
-    for r in routers:
-        app.include_router(r)
+    [app.include_router(r) for r in routers]
