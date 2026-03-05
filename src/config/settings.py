@@ -10,6 +10,12 @@ from sqlalchemy.orm import declarative_base
 
 class Settings(BaseSettings):
     database_url: str
+    jwt_secret_key: str
+    jwt_algorithm: str
+    jwt_access_token_expires_minutes: int
+    jwt_refresh_token_expires_days: int
+    jwt_refresh_cookie_name: str | None = None
+    jwt_refresh_cookie_domain: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",

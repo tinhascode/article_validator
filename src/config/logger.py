@@ -9,7 +9,10 @@ class LoggerConfig:
         self.level = level
         if handler is None:
             handler = logging.StreamHandler()
-        formatter = logging.Formatter("%(levelname)s | %(name)s | %(message)s")
+        formatter = logging.Formatter(
+            "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+            datefmt="%d-%m-%Y %H:%M:%S",
+        )
         handler.setFormatter(formatter)
         handler.setLevel(level)
         self.handler = handler
