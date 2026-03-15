@@ -20,10 +20,10 @@ from src.utils.permissions import admin_permission
 
 class UserService:
     def __init__(
-        self, db: Session, password_manager: Optional[PasswordManager] = None
+        self, db: Session
     ) -> None:
         self.db = db
-        self.pwd = password_manager or PasswordManager()
+        self.password_manager = PasswordManager()
         self.cpf_validator = CPFValidator()
         self.logger = get_logger(self.__class__.__name__)
 
@@ -97,7 +97,7 @@ class UserService:
                 self.logger.warning("attempt to create user with existing cpf=%s", cpf_clean)
                 raise ValueError("cpf already exists")
 
-            password_hash = self.pwd.hash(user_in.password)
+            password_hash = self.password_manager.hash(user_in.password)
             if getattr(user_in, "role_id", None) is not None:
                 if user_in.role_id and not self.db.get(Role, user_in.role_id):
                     self.logger.warning("attempt to create user with non-existing role_id=%s", user_in.role_id)

@@ -31,11 +31,11 @@ class RoleRoutes:
     async def create_role(
         self,
         role_in: RoleCreateSchema,
-        svc: RoleService = Depends(get_role_service),
+        role_service: RoleService = Depends(get_role_service),
         current_user: User = Depends(get_current_user),
     ):
         try:
-            role = svc.create(role_in=role_in, current_user=current_user)
+            role = role_service.create(role_in=role_in, current_user=current_user)
         except ValueError as exc:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
@@ -58,24 +58,24 @@ class RoleRoutes:
         self,
         role_id: str,
         payload: RoleUpdateSchema,
-        svc: RoleService = Depends(get_role_service),
+        role_service: RoleService = Depends(get_role_service),
         current_user: User = Depends(get_current_user),
     ) -> RoleReadSchema:
-        role = svc.get(role_id)
+        role = role_service.get(role_id)
         if not role:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="role not found"
             )
-        updated = svc.update(role, role_in=payload, current_user=current_user)
+        updated = role_service.update(role, role_in=payload, current_user=current_user)
         return RoleReadSchema.from_orm(updated)
 
-    async def delete_role(self, role_id: str, svc: RoleService = Depends(get_role_service), current_user: User = Depends(get_current_user)) -> None:
-        role = svc.get(role_id)
+    async def delete_role(self, role_id: str, role_service: RoleService = Depends(get_role_service), current_user: User = Depends(get_current_user)) -> None:
+        role = role_service.get(role_id)
         if not role:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="role not found"
             )
-        svc.delete(role, current_user=current_user)
+        role_service.delete(role, current_user=current_user)
 
 
 role_router = RoleRoutes().router

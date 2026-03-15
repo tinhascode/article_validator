@@ -20,12 +20,10 @@ class AuthService:
     def __init__(
         self,
         db: Session,
-        pwd_manager: Optional[PasswordManager] = None,
-        jwt_manager: Optional[JwtManager] = None,
     ) -> None:
         self.db = db
-        self.pwd = pwd_manager or PasswordManager()
-        self.jwt = jwt_manager or JwtManager()
+        self.pwd = PasswordManager()
+        self.jwt = JwtManager()
         self.logger = get_logger(self.__class__.__name__)
 
     def authenticate_user(
