@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from src.config.settings import init_db
 from src.routes import register_routes
-from src.exceptions import BaseServiceException
+from src.exceptions.base_exception import BaseServiceException
 from src.utils.exception_handlers import (
     service_exception_handler,
     http_exception_handler,

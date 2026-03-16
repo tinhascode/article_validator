@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 
-from src.exceptions import BaseServiceException
+from src.exceptions.base_exception import BaseServiceException
 from src.config.logger import get_logger
 
 logger = get_logger("ExceptionHandlers")
