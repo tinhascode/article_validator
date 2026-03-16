@@ -6,7 +6,7 @@ from fastapi import Depends
 
 from src.models.user import User
 from src.services.auth_service import get_current_user
-from src.exceptions import AdminPrivilegesRequiredException
+from src.exceptions.auth.auth_exceptions import AdminPrivilegesRequiredException
 
 
 class AdminPermission:
