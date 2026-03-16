@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 
 from src.schemas.user.user_create_schema import UserCreateSchema
 from src.schemas.user.user_read_schema import UserReadSchema
@@ -35,29 +35,17 @@ class UserRoutes:
         user_service: UserService = Depends(get_user_service),
         current_user: User = Depends(get_current_user),
     ):
-        try:
-            user = user_service.create(user_in=user_in, current_user=current_user)
-        except ValueError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
-            )
-        return {"message": "user created", "user": UserReadSchema.from_orm(user)}
+        return user_service.create_with_response(user_in=user_in, current_user=current_user)
 
     async def list_users(
         self, user_service: UserService = Depends(get_user_service)
     ) -> List[UserReadSchema]:
-        users = user_service.list()
-        return [UserReadSchema.from_orm(u) for u in users]
+        return user_service.list_with_schema()
 
     async def get_user(
         self, user_id: str, user_service: UserService = Depends(get_user_service)
     ) -> UserReadSchema:
-        user = user_service.get(user_id)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="user not found"
-            )
-        return UserReadSchema.from_orm(user)
+        return user_service.get_with_schema(user_id)
 
     async def update_user(
         self,
@@ -66,23 +54,12 @@ class UserRoutes:
         user_service: UserService = Depends(get_user_service),
         current_user: User = Depends(get_current_user),
     ) -> UserReadSchema:
-        user = user_service.get(user_id)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="user not found"
-            )
-        updated = user_service.update(user, user_in=payload, current_user=current_user)
-        return UserReadSchema.from_orm(updated)
+        return user_service.update_with_validation(user_id, payload, current_user)
 
     async def delete_user(
         self, user_id: str, user_service: UserService = Depends(get_user_service), current_user: User = Depends(get_current_user)
     ) -> None:
-        user = user_service.get(user_id)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="user not found"
-            )
-        user_service.delete(user, current_user=current_user)
+        user_service.delete_with_validation(user_id, current_user)
 
 
 user_router = UserRoutes().router

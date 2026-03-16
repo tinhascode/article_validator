@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 
 from src.models.user import User
 from src.services.auth_service import get_current_user
+from src.exceptions import AdminPrivilegesRequiredException
 
 
 class AdminPermission:
@@ -13,24 +14,15 @@ class AdminPermission:
         role = getattr(current_user, "role", None)
         name = getattr(role, "name", None)
         if not name or name.lower() != "admin":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="admin privileges required",
-            )
+            raise AdminPrivilegesRequiredException()
         return current_user
 
     def ensure(self, user: Optional[User]) -> None:
         if not user:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="admin privileges required",
-            )
+            raise AdminPrivilegesRequiredException()
         role = getattr(user, "role", None)
         name = getattr(role, "name", None)
         if not name or name.lower() != "admin":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="admin privileges required",
-            )
+            raise AdminPrivilegesRequiredException()
 
 admin_permission = AdminPermission()

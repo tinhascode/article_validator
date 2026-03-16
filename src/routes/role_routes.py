@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 
 from src.schemas.role.role_create_schema import RoleCreateSchema
 from src.schemas.role.role_read_schema import RoleReadSchema
@@ -34,25 +34,13 @@ class RoleRoutes:
         role_service: RoleService = Depends(get_role_service),
         current_user: User = Depends(get_current_user),
     ):
-        try:
-            role = role_service.create(role_in=role_in, current_user=current_user)
-        except ValueError as exc:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)
-            )
-        return {"message": "role created", "role": RoleReadSchema.from_orm(role)}
+        return role_service.create_with_response(role_in=role_in, current_user=current_user)
 
     async def list_roles(self, svc: RoleService = Depends(get_role_service)) -> List[RoleReadSchema]:
-        roles = svc.list()
-        return [RoleReadSchema.from_orm(r) for r in roles]
+        return svc.list_with_schema()
 
     async def get_role(self, role_id: str, svc: RoleService = Depends(get_role_service)) -> RoleReadSchema:
-        role = svc.get(role_id)
-        if not role:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="role not found"
-            )
-        return RoleReadSchema.from_orm(role)
+        return svc.get_with_schema(role_id)
 
     async def update_role(
         self,
@@ -61,21 +49,10 @@ class RoleRoutes:
         role_service: RoleService = Depends(get_role_service),
         current_user: User = Depends(get_current_user),
     ) -> RoleReadSchema:
-        role = role_service.get(role_id)
-        if not role:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="role not found"
-            )
-        updated = role_service.update(role, role_in=payload, current_user=current_user)
-        return RoleReadSchema.from_orm(updated)
+        return role_service.update_with_validation(role_id, payload, current_user)
 
     async def delete_role(self, role_id: str, role_service: RoleService = Depends(get_role_service), current_user: User = Depends(get_current_user)) -> None:
-        role = role_service.get(role_id)
-        if not role:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="role not found"
-            )
-        role_service.delete(role, current_user=current_user)
+        role_service.delete_with_validation(role_id, current_user)
 
 
 role_router = RoleRoutes().router

@@ -16,6 +16,15 @@ from src.config.logger import get_logger
 from typing import Optional as _Optional
 from src.models.user import User as _User
 from src.utils.permissions import admin_permission
+from src.exceptions import (
+    UserNotFoundException,
+    UserAlreadyExistsException,
+    InvalidCpfException,
+    CpfUpdateNotAllowedException,
+    RoleNotFoundForUserException,
+)
+from src.schemas.user.user_response_schema import UserResponseSchema
+from src.schemas.user.user_read_schema import UserReadSchema
 
 
 class UserService:
@@ -83,25 +92,25 @@ class UserService:
             self.logger.info("creating user with cpf=%s", cpf_clean)
             if not self.cpf_validator.is_valid(cpf_clean):
                 self.logger.warning("invalid cpf for username=%s", user_in.username)
-                raise ValueError("invalid cpf")
+                raise InvalidCpfException(cpf_clean)
             
             if self.get_by_username(user_in.username):
                 self.logger.warning("attempt to create user with existing username=%s", user_in.username)
-                raise ValueError("username already exists")
+                raise UserAlreadyExistsException("username", user_in.username)
             
             if self.get_by_email(user_in.email):
                 self.logger.warning("attempt to create user with existing email=%s", user_in.email)
-                raise ValueError("email already exists")
+                raise UserAlreadyExistsException("email", user_in.email)
             
             if self.get_by_cpf(cpf_clean):
                 self.logger.warning("attempt to create user with existing cpf=%s", cpf_clean)
-                raise ValueError("cpf already exists")
+                raise UserAlreadyExistsException("cpf", cpf_clean)
 
             password_hash = self.password_manager.hash(user_in.password)
             if getattr(user_in, "role_id", None) is not None:
                 if user_in.role_id and not self.db.get(Role, user_in.role_id):
                     self.logger.warning("attempt to create user with non-existing role_id=%s", user_in.role_id)
-                    raise ValueError("role not found")
+                    raise RoleNotFoundForUserException(user_in.role_id)
 
             user = User(
                 name=user_in.name,
@@ -117,11 +126,46 @@ class UserService:
             self.db.refresh(user)
             self.logger.info("created user id=%s username=%s", getattr(user, "id", None), user.username)
             return user
-        except ValueError:
+        except (UserAlreadyExistsException, InvalidCpfException, RoleNotFoundForUserException):
             raise
         except Exception:
             self.logger.exception("error creating user username=%s", getattr(user_in, "username", None))
             raise
+
+    def get_with_validation(self, user_id: str) -> User:
+        user = self.get(user_id)
+        if not user:
+            raise UserNotFoundException(user_id)
+        return user
+
+    def create_with_response(self, *, user_in: UserCreateSchema, current_user: _Optional[_User] = None) -> UserResponseSchema:
+        user = self.create(user_in=user_in, current_user=current_user)
+        return UserResponseSchema(
+            message="user created", 
+            user=UserReadSchema.from_orm(user)
+        )
+
+    def list_with_schema(self, skip: int = 0, limit: int = 100) -> list[UserReadSchema]:
+        users = self.list(skip, limit)
+        return [UserReadSchema.from_orm(u) for u in users]
+
+    def get_with_schema(self, user_id: str) -> UserReadSchema:
+        user = self.get_with_validation(user_id)
+        return UserReadSchema.from_orm(user)
+
+    def update_with_validation(
+        self,
+        user_id: str,
+        user_in: UserUpdateSchema,
+        current_user: _Optional[_User] = None
+    ) -> UserReadSchema:
+        user = self.get_with_validation(user_id)
+        updated_user = self.update(user, user_in=user_in, current_user=current_user)
+        return UserReadSchema.from_orm(updated_user)
+
+    def delete_with_validation(self, user_id: str, current_user: _Optional[_User] = None) -> None:
+        user = self.get_with_validation(user_id)
+        self.delete(user, current_user=current_user)
 
     def update(self, user: User, *, user_in: UserUpdateSchema, current_user: _Optional[_User] = None) -> User:
         try:
@@ -130,7 +174,7 @@ class UserService:
             changed = False
             
             if getattr(user_in, "cpf", None) is not None:
-                raise ValueError("cpf cannot be updated")
+                raise CpfUpdateNotAllowedException()
             
             if user_in.name is not None:
                 user.name = user_in.name
@@ -141,7 +185,7 @@ class UserService:
                 
                 if existing and getattr(existing, "id", None) != getattr(user, "id", None):
                     self.logger.warning("attempt to update user with existing username=%s", user_in.username)
-                    raise ValueError("username already exists")
+                    raise UserAlreadyExistsException("username", user_in.username)
                 
                 user.username = user_in.username
                 changed = True
@@ -149,7 +193,7 @@ class UserService:
             if getattr(user_in, "role_id", None) is not None:
                 if user_in.role_id and not self.db.get(Role, user_in.role_id):
                     self.logger.warning("attempt to update user with non-existing role_id=%s", user_in.role_id)
-                    raise ValueError("role not found")
+                    raise RoleNotFoundForUserException(user_in.role_id)
                 user.role_id = user_in.role_id
                 changed = True
 
@@ -161,7 +205,7 @@ class UserService:
 
             self.logger.info("updated user id=%s", getattr(user, "id", None))
             return user
-        except ValueError:
+        except (CpfUpdateNotAllowedException, UserAlreadyExistsException, RoleNotFoundForUserException):
             raise
         except Exception:
             self.logger.exception("error updating user id=%s", getattr(user, "id", None))
@@ -176,7 +220,6 @@ class UserService:
         except Exception:
             self.logger.exception("error deleting user id=%s", getattr(user, "id", None))
             raise
-
 
 def get_user_service(db: Session = Depends(get_db)) -> UserService:
     return UserService(db)

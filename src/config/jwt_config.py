@@ -33,6 +33,7 @@ class JwtConfig:
 		if not self.refresh_cookie_name:
 			raise RuntimeError("JWT_REFRESH_COOKIE_NAME is not set in environment")
 		self.refresh_cookie_domain: str | None = os.getenv("JWT_REFRESH_COOKIE_DOMAIN") or None
+		self.refresh_csrf_cookie_name: str = os.getenv("JWT_REFRESH_CSRF_COOKIE_NAME", "csrf_refresh_token")
 
 	def access_token_expires(self) -> timedelta:
 		return timedelta(minutes=self.access_token_expires_minutes)

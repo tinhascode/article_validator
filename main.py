@@ -1,6 +1,12 @@
-from fastapi import  FastAPI
+from fastapi import FastAPI, HTTPException
 from src.config.settings import init_db
 from src.routes import register_routes
+from src.exceptions import BaseServiceException
+from src.utils.exception_handlers import (
+    service_exception_handler,
+    http_exception_handler,
+    general_exception_handler,
+)
 
 
 def create_app() -> FastAPI:
@@ -10,6 +16,10 @@ def create_app() -> FastAPI:
         version="0.1.0",
         description="API for validating and managing articles",
     )
+
+    fastapi_app.add_exception_handler(BaseServiceException, service_exception_handler)
+    fastapi_app.add_exception_handler(HTTPException, http_exception_handler)
+    fastapi_app.add_exception_handler(Exception, general_exception_handler)
 
     @fastapi_app.on_event("startup")
     def _init_db_on_startup() -> None:
