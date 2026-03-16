@@ -11,16 +11,18 @@ from src.utils.jwt_utils import JwtManager
 from src.config.settings import get_db
 from src.config.jwt_config import JwtConfig
 from src.config.logger import get_logger
-from src.exceptions import (
+from src.exceptions.auth.auth_exceptions import (
     InvalidCredentialsException,
     InvalidTokenException,
     InvalidTokenPayloadException,
     UserNotFoundInTokenException,
+)
+from src.exceptions.token.token_exceptions import (
     RefreshTokenMissingException,
     InvalidCsrfTokenException,
     DeviceMismatchException,
     RefreshTokenInvalidException,
-)
+    )
 from src.schemas.auth.access_token_response_schema import AccessTokenResponseSchema
 from src.services.token_service import TokenService
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")

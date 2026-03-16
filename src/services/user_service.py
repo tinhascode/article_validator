@@ -16,7 +16,7 @@ from src.config.logger import get_logger
 from typing import Optional as _Optional
 from src.models.user import User as _User
 from src.utils.permissions import admin_permission
-from src.exceptions import (
+from src.exceptions.users.user_exceptions import (
     UserNotFoundException,
     UserAlreadyExistsException,
     InvalidCpfException,
