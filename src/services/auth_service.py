@@ -25,7 +25,7 @@ from src.exceptions.token.token_exceptions import (
     )
 from src.schemas.auth.access_token_response_schema import AccessTokenResponseSchema
 from src.services.token_service import TokenService
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 class AuthService:
@@ -132,9 +132,9 @@ class AuthService:
             if existing_rt and existing_rt.is_active():
                 raw_refresh = existing_raw
             else:
-                raw_refresh = self._create_new_refresh_token(user, request, self.token_service)
+                raw_refresh = self._create_new_refresh_token(user, request)
         else:
-            raw_refresh = self._create_new_refresh_token(user, request, self.token_service)
+            raw_refresh = self._create_new_refresh_token(user, request)
         
         self._set_refresh_cookie(response, raw_refresh)
         
