@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Any, Dict, Optional
+from typing import Optional
 
 from sqlalchemy import Column, Date, String, ForeignKey
 from sqlalchemy.orm import relationship

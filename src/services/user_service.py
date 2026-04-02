@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from src.models.user import User
+from models.user import User
 from src.models.role import Role
 from src.schemas.user.user_create_schema import UserCreateSchema
 from src.schemas.user.user_update_schema import UserUpdateSchema
@@ -76,7 +76,7 @@ class UserService:
             self.logger.exception("error getting user by cpf=%s", cpf)
             raise
 
-    def list(self, skip: int = 0, limit: int = 100) -> List[User]:
+    def list(self, skip: int = 0, limit: int = 100) -> list[type[User]]:
         try:
             self.logger.info("listing users skip=%d limit=%d", skip, limit)
             return self.db.query(User).offset(skip).limit(limit).all()
